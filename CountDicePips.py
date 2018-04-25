@@ -7,6 +7,7 @@ Created on Fri Apr 20 09:49:01 2018
 import os
 import numpy as np
 import cv2
+from matplotlib import pyplot as plt
 
 def CountDicePips(inputPath,outputPath,image):
     """ Count the number of pips on one or more dice in an image file.
@@ -22,9 +23,14 @@ def CountDicePips(inputPath,outputPath,image):
         sum of all pips found on all dice as well as the number of pips on
         each dice next to the dice.
     """
-    # Read in an image and correct for colorspace   
-    img = cv2.imread(os.path.join(inputPath,image))
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)    
+    # Read in an image and correct for colorspace
+    path = os.path.join(inputPath,image)
+    if os.path.isfile(path):
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    else:
+        print("No image file found")
+        return
     
     # Create a greyscale version of the image        
     gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
@@ -57,6 +63,15 @@ def CountDicePips(inputPath,outputPath,image):
             
             # Count the pips on the die
             params = cv2.SimpleBlobDetector_Params()
+            
+            # Filter by Circularity
+            params.filterByCircularity = True
+            params.minCircularity = 0.5
+            
+            # Filter by Inertia
+            params.filterByInertia = True
+            params.minInertiaRatio = 0.75
+            
             detector = cv2.SimpleBlobDetector_create(params)
             keypoints = detector.detect(roi)            
             num_dots = len(keypoints)
@@ -73,14 +88,14 @@ def CountDicePips(inputPath,outputPath,image):
     text = 'Sum: ' + str(sum_dots)             
     cv2.putText(img,text,(25,50),0,1.75,(0,255,0), 4, cv2.LINE_AA)
     
-    #Convert from openCV BGR colorspace to RGB colorspace
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # Plot the result
+    plt.imshow(img),plt.show()
     
-    outputName = 'output_'+image
-    
+    outputName = 'output_'+image    
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
     
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imwrite(os.path.join(outputPath,outputName),img)
       
 
